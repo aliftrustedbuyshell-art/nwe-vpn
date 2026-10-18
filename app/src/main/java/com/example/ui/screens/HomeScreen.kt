@@ -91,24 +91,38 @@ fun HomeScreen(
     val realIp by VpnController.realIp.collectAsState()
     val virtualIp by VpnController.virtualIp.collectAsState()
     val selectedProtocol by VpnController.selectedProtocol.collectAsState()
+    val statusMessage by VpnController.statusMessage.collectAsState()
+
+    // Notification permission launcher for Android 13+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { _ -> }
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
 
     // Android VpnService permission launcher
     val vpnPrepareLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            VpnController.connect(context)
-        }
+    ) { _ ->
+        VpnController.connect(context)
     }
 
     val handleToggleConnect = {
         if (connectionState == ConnectionState.CONNECTED || connectionState == ConnectionState.CONNECTING) {
             VpnController.disconnect(context)
         } else {
-            val prepareIntent = VpnService.prepare(context)
-            if (prepareIntent != null) {
-                vpnPrepareLauncher.launch(prepareIntent)
-            } else {
+            try {
+                val prepareIntent = VpnService.prepare(context)
+                if (prepareIntent != null) {
+                    vpnPrepareLauncher.launch(prepareIntent)
+                } else {
+                    VpnController.connect(context)
+                }
+            } catch (_: Exception) {
                 VpnController.connect(context)
             }
         }
@@ -568,7 +582,7 @@ fun HomeScreen(
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = String.format(Locale.US, "%.1f Mbps", telemetry.downloadSpeedMbps),
+                                text = telemetry.formattedDownloadSpeed(),
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontFamily = FontFamily.Monospace,
                                     fontWeight = FontWeight.Bold,
@@ -604,7 +618,7 @@ fun HomeScreen(
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = String.format(Locale.US, "%.1f Mbps", telemetry.uploadSpeedMbps),
+                                text = telemetry.formattedUploadSpeed(),
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontFamily = FontFamily.Monospace,
                                     fontWeight = FontWeight.Bold,

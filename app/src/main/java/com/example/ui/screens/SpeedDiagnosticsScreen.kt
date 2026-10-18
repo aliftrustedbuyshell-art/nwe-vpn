@@ -193,6 +193,9 @@ fun SpeedDiagnosticsScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    val downloadKbs = downloadSpeed * 128f
+                    val uploadKbs = uploadSpeed * 128f
+
                     // Arc Speedometer
                     Box(
                         modifier = Modifier.size(190.dp),
@@ -219,7 +222,7 @@ fun SpeedDiagnosticsScreen(
 
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = String.format(Locale.US, "%.1f", downloadSpeed),
+                                text = String.format(Locale.US, "%.0f", downloadKbs),
                                 style = MaterialTheme.typography.headlineLarge.copy(
                                     fontFamily = FontFamily.Monospace,
                                     fontWeight = FontWeight.ExtraBold,
@@ -228,7 +231,7 @@ fun SpeedDiagnosticsScreen(
                                 )
                             )
                             Text(
-                                text = "Mbps Download",
+                                text = "KB/s Download",
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     color = CyberTextSecondary
                                 )
@@ -246,7 +249,7 @@ fun SpeedDiagnosticsScreen(
                         SpeedMetricItem(
                             icon = Icons.Default.ArrowUpward,
                             title = "Upload",
-                            value = String.format(Locale.US, "%.1f Mbps", uploadSpeed),
+                            value = String.format(Locale.US, "%.0f KB/s", uploadKbs),
                             color = CyberPrimary
                         )
                         SpeedMetricItem(

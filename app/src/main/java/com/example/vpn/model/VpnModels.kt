@@ -103,4 +103,23 @@ data class NetworkTelemetry(
     val sessionDurationSeconds: Long = 0L,
     val currentPingMs: Int = 18,
     val packetLossPercent: Float = 0.0f
-)
+) {
+    // 1 Mbps = 128 KB/s
+    val downloadSpeedKbs: Float get() = downloadSpeedMbps * 128f
+    val uploadSpeedKbs: Float get() = uploadSpeedMbps * 128f
+
+    fun formattedDownloadSpeed(): String = formatKbs(downloadSpeedKbs)
+    fun formattedUploadSpeed(): String = formatKbs(uploadSpeedKbs)
+
+    companion object {
+        fun formatKbs(kbs: Float): String {
+            return if (kbs <= 0f) {
+                "0 KB/s"
+            } else if (kbs < 1000f) {
+                String.format(java.util.Locale.US, "%.0f KB/s", kbs)
+            } else {
+                String.format(java.util.Locale.US, "%.1f KB/s", kbs)
+            }
+        }
+    }
+}

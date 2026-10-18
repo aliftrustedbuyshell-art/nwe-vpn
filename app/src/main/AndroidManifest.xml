@@ -31,7 +31,7 @@
         </activity>
 
         <service
-            android:name=".vpn.AegisVpnService"
+            android:name=".vpn.service.AegisVpnService"
             android:permission="android.permission.BIND_VPN_SERVICE"
             android:foregroundServiceType="specialUse"
             android:exported="false">

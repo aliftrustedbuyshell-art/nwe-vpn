@@ -68,6 +68,8 @@ class ExampleRobolectricTest {
             duration = 15L
         )
         assertEquals(68.5f, VpnController.telemetry.value.downloadSpeedMbps, 0.01f)
+        assertTrue(VpnController.telemetry.value.downloadSpeedKbs > 0f)
+        assertTrue(VpnController.telemetry.value.formattedDownloadSpeed().contains("KB/s"))
         assertEquals(15L, VpnController.telemetry.value.sessionDurationSeconds)
 
         VpnController.onVpnDisconnected()
