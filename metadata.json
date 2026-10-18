@@ -1,0 +1,6 @@
+{
+  "name": "Aegis VPN",
+  "description": "High-speed encrypted VPN with military-grade security, global servers, live bandwidth monitor, and strict verified no-logs protection.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
