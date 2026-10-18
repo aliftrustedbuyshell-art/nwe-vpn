@@ -67,8 +67,7 @@ class AegisVpnService : VpnService() {
                     .setSession("Aegis VPN ($serverName)")
                     .setMtu(1500)
                     .addAddress("10.8.0.2", 24)
-                    .addDnsServer(dnsIp)
-                    .addRoute("0.0.0.0", 0)
+                    .addRoute("10.8.0.0", 24)
                     .allowBypass()
 
                 val pfd = builder.establish()

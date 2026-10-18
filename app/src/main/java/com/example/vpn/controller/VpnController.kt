@@ -265,6 +265,19 @@ object VpnController {
         }
     }
 
+    fun addCustomServer(server: VpnServer) {
+        _servers.update { listOf(server) + it }
+        selectServer(server)
+        controllerScope.launch {
+            val realPing = NetworkUtils.measurePing(server.hostAddress, server.port)
+            if (realPing > 0 && realPing < 1000) {
+                _servers.update { list ->
+                    list.map { if (it.id == server.id) it.copy(pingMs = realPing) else it }
+                }
+            }
+        }
+    }
+
     fun selectProtocol(protocol: VpnProtocol) {
         _selectedProtocol.value = protocol
     }

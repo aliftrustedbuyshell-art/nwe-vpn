@@ -18,9 +18,12 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FlashOn
@@ -28,6 +31,9 @@ import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,6 +47,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -68,6 +75,7 @@ import com.example.vpn.controller.VpnController
 import com.example.vpn.model.ConnectionState
 import com.example.vpn.model.ServerCategory
 import com.example.vpn.model.VpnServer
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,6 +90,7 @@ fun ServersScreen(
 
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf(ServerCategory.ALL) }
+    var showAddServerDialog by remember { mutableStateOf(false) }
 
     val filteredServers = servers.filter { server ->
         val matchesCategory = selectedCategory == ServerCategory.ALL || server.category == selectedCategory
@@ -90,6 +99,16 @@ fun ServersScreen(
                 server.country.contains(searchQuery, ignoreCase = true) ||
                 server.city.contains(searchQuery, ignoreCase = true)
         matchesCategory && matchesQuery
+    }
+
+    if (showAddServerDialog) {
+        AddServerDialog(
+            onDismiss = { showAddServerDialog = false },
+            onServerAdded = { newServer ->
+                VpnController.addCustomServer(newServer)
+                showAddServerDialog = false
+            }
+        )
     }
 
     Column(
@@ -106,7 +125,7 @@ fun ServersScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Header Title and Ping All button
+            // Header Title and Action buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -129,32 +148,65 @@ fun ServersScreen(
                     )
                 }
 
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = CyberSurface,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, CyberCardBorder),
-                    modifier = Modifier
-                        .clickable { VpnController.pingAllServers() }
-                        .testTag("ping_all_button")
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Add Server button
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = CyberPrimary.copy(alpha = 0.15f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, CyberPrimary),
+                        modifier = Modifier
+                            .clickable { showAddServerDialog = true }
+                            .testTag("add_server_button")
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Refresh Ping",
-                            tint = CyberPrimary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Ping All",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = CyberPrimary
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add Server",
+                                tint = CyberPrimary,
+                                modifier = Modifier.size(16.dp)
                             )
-                        )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Add",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = CyberPrimary
+                                )
+                            )
+                        }
+                    }
+
+                    // Ping All button
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = CyberSurface,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, CyberCardBorder),
+                        modifier = Modifier
+                            .clickable { VpnController.pingAllServers() }
+                            .testTag("ping_all_button")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Refresh Ping",
+                                tint = CyberSecondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Ping",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = CyberSecondary
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -492,4 +544,143 @@ private fun ServerItemCard(
             )
         }
     }
+}
+
+@Composable
+private fun AddServerDialog(
+    onDismiss: () -> Unit,
+    onServerAdded: (VpnServer) -> Unit
+) {
+    var serverName by remember { mutableStateOf("") }
+    var hostAddress by remember { mutableStateOf("") }
+    var portText by remember { mutableStateOf("443") }
+    var country by remember { mutableStateOf("") }
+    var city by remember { mutableStateOf("") }
+    var flagEmoji by remember { mutableStateOf("🌐") }
+    var category by remember { mutableStateOf(ServerCategory.ALL) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Add Custom Server",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = CyberTextPrimary
+                )
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "Enter your VPS, OpenVPN, or WireGuard endpoint details:",
+                    style = MaterialTheme.typography.bodySmall.copy(color = CyberTextSecondary)
+                )
+
+                OutlinedTextField(
+                    value = serverName,
+                    onValueChange = { serverName = it },
+                    label = { Text("Server Name (e.g. Bangladesh Fast)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = hostAddress,
+                    onValueChange = { hostAddress = it },
+                    label = { Text("Host Address / IP (e.g. 103.150.24.12)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = portText,
+                        onValueChange = { portText = it },
+                        label = { Text("Port") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = flagEmoji,
+                        onValueChange = { flagEmoji = it },
+                        label = { Text("Flag Emoji") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = country,
+                        onValueChange = { country = it },
+                        label = { Text("Country") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = city,
+                        onValueChange = { city = it },
+                        label = { Text("City") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Text(
+                    text = "Category:",
+                    style = MaterialTheme.typography.labelSmall.copy(color = CyberTextSecondary)
+                )
+
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(ServerCategory.values()) { cat ->
+                        FilterChip(
+                            selected = category == cat,
+                            onClick = { category = cat },
+                            label = { Text(cat.label, fontSize = 11.sp) }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (serverName.isNotBlank() && hostAddress.isNotBlank()) {
+                        val parsedPort = portText.toIntOrNull() ?: 443
+                        val newServer = VpnServer(
+                            id = "custom_" + UUID.randomUUID().toString().take(8),
+                            name = serverName.trim(),
+                            country = if (country.isNotBlank()) country.trim() else "Custom",
+                            city = if (city.isNotBlank()) city.trim() else "Gateway",
+                            flagEmoji = if (flagEmoji.isNotBlank()) flagEmoji.trim() else "🌐",
+                            hostAddress = hostAddress.trim(),
+                            port = parsedPort,
+                            pingMs = 25,
+                            loadPercent = 18,
+                            speedCapacityGbps = 10,
+                            category = category,
+                            isRamOnly = true
+                        )
+                        onServerAdded(newServer)
+                    }
+                },
+                enabled = serverName.isNotBlank() && hostAddress.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = CyberPrimary)
+            ) {
+                Text("Add & Connect", color = Color(0xFF002026), fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = CyberTextSecondary)
+            }
+        },
+        containerColor = CyberSurface
+    )
 }
